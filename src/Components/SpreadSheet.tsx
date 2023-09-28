@@ -108,6 +108,13 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
   }
 
   /**
+   * This function is called when a user tries to click cell without logging in
+   */
+  function nonLogonAlert(){
+    alert("You must logon to use this feature");
+  }
+
+  /**
    *  This function is the call back for the number buttons and the Parenthesis buttons
    * 
    * They all automatically start the editing of the current formula.
@@ -116,6 +123,10 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
    * 
    * */
   function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
+
+    if (!userName || userName === "") {
+      nonLogonAlert();
+    }
 
     const text = event.currentTarget.textContent;
     let trueText = text ? text : "";
@@ -126,7 +137,6 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
 
   }
 
-
   /**
    * 
    * @param event 
@@ -136,6 +146,10 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
    * If the edit status is false then it will ask the machine to update the current formula.
    */
   function onCellClick(event: React.MouseEvent<HTMLButtonElement>): void {
+
+    if (!userName || userName === "") {
+      nonLogonAlert();
+    }
 
     const cellLabel = event.currentTarget.getAttribute("cell-label");
     // calculate the current row and column of the clicked on cell
