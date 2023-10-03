@@ -17,7 +17,6 @@ export class FormulaEvaluator {
   evaluate(formula: FormulaType): void {
     // Reset error message and result
     this._errorMessage = "";
-    // this._result = 0;
 
     if (formula.length === 0) {
       this._errorMessage = ErrorMessages.emptyFormula;
