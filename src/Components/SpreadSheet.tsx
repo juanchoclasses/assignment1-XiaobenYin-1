@@ -110,8 +110,8 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
   /**
    * This function is called when a user tries to click cell without logging in
    */
-  function nonLogonAlert(){
-    alert("You must logon to use this feature");
+  function checkLogin(){
+    alert("Please login to use the spreadsheet!");
   }
 
   /**
@@ -125,7 +125,7 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
   function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
 
     if (!userName || userName === "") {
-      nonLogonAlert();
+      checkLogin();
     }
 
     const text = event.currentTarget.textContent;
@@ -148,7 +148,7 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
   function onCellClick(event: React.MouseEvent<HTMLButtonElement>): void {
 
     if (!userName || userName === "") {
-      nonLogonAlert();
+      checkLogin();
     }
 
     const cellLabel = event.currentTarget.getAttribute("cell-label");
