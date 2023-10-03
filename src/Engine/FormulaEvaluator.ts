@@ -17,28 +17,35 @@ export class FormulaEvaluator {
   evaluate(formula: FormulaType): void {
     // Reset error message and result
     this._errorMessage = "";
-    this._result = 0;
+    // this._result = 0;
 
     if (formula.length === 0) {
       this._errorMessage = ErrorMessages.emptyFormula;
       return;
     }
 
+    const lastCharacter = formula[formula.length - 1];
+    if (this.isOperator(lastCharacter) && lastCharacter !== ")") {
+      this._errorMessage = ErrorMessages.invalidFormula;
+    }
+
     try {
       const result = this.evaluateExpression(formula);
       this._result = result;
     } catch (error) {
-      this._errorMessage = ErrorMessages.invalidFormula;
+      if (!this._errorMessage) {
+        this._errorMessage = ErrorMessages.invalidFormula;
+      }
     }
   }
 
   private evaluateExpression(tokens: FormulaType): number {
     const values: number[] = [];
     const operators: string[] = [];
-
+  
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
-
+  
       if (this.isNumber(token)) {
         values.push(Number(token));
       } else if (this.isCellReference(token)) {
@@ -65,19 +72,29 @@ export class FormulaEvaluator {
         operators.push(token);
       }
     }
-
-    while (operators.length > 0) {
-      this.applyOperator(operators.pop()!, values);
+  
+    // Check for trailing operators
+    const lastToken = tokens[tokens.length - 1];
+    if (this.isOperator(lastToken)) {
+      this._errorMessage = ErrorMessages.invalidFormula;
+      return values[values.length - 1] || 0; // Return the last value
     }
-
-    if (values.length !== 1) {
+  
+    // Check if the formula is incomplete (due to unmatched parentheses, etc.)
+    if (operators.length > 0 && (!this.isOperator(operators[operators.length - 1]) || values.length < 2)) {
       this._errorMessage = ErrorMessages.invalidFormula;
       throw new Error("Invalid formula");
     }
-
+  
+    // Remaining operations
+    while (operators.length > 0) {
+      this.applyOperator(operators.pop()!, values);
+    }
+  
     return values.pop() || 0;
-  }
-
+  } 
+  
+  
   private applyOperator(operator: string, values: number[]): void {
     const operand2 = values.pop()!;
     const operand1 = values.pop()!;
@@ -95,6 +112,7 @@ export class FormulaEvaluator {
         break;
       case "/":
         if (operand2 === 0) {
+          this._result = Infinity;
           this._errorMessage = ErrorMessages.divideByZero;
           throw new Error("Division by zero");
         }
