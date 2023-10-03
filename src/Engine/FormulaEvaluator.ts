@@ -18,21 +18,25 @@ export class FormulaEvaluator {
     // Reset error message and result
     this._errorMessage = "";
 
+    // Validate initial formula conditions
     if (formula.length === 0) {
       this._errorMessage = ErrorMessages.emptyFormula;
       return;
     }
 
+    // Evaluate the formula expression when there's only parenthesis
     if (formula.length === 2 && formula[0] === "(" && formula[1] === ")") {
       this._errorMessage = ErrorMessages.missingParentheses;
       return;
     }
 
+    // Check for formula with the last character being an operator
     const lastCharacter = formula[formula.length - 1];
     if (this.isOperator(lastCharacter) && lastCharacter !== ")") {
       this._errorMessage = ErrorMessages.invalidFormula;
     }
 
+    // Evaluate the formula expression
     try {
       const result = this.evaluateExpression(formula);
       this._result = result;
@@ -43,6 +47,7 @@ export class FormulaEvaluator {
     }
   }
 
+  // Evaluate the formula expression
   private evaluateExpression(tokens: FormulaType): number {
     const values: number[] = [];
     const operators: string[] = [];
@@ -114,6 +119,7 @@ export class FormulaEvaluator {
     return values.pop() || 0;
   }
 
+  // Apply the operator to the operands
   private applyOperator(operator: string, values: number[]): void {
     const operand2 = values.pop()!;
     const operand1 = values.pop()!;
@@ -145,35 +151,43 @@ export class FormulaEvaluator {
     values.push(result);
   }
 
+  // Check if the token is a number
   private isNumber(token: TokenType): boolean {
     return !isNaN(Number(token));
   }
 
+  // Check if the token is a cell reference
   private isCellReference(token: TokenType): boolean {
     return Cell.isValidCellLabel(token);
   }
 
+  // Get the value of the cell
   private getCellValue(token: TokenType): [number, string] {
     const cell = this._sheetMemory.getCellByLabel(token);
     const formula = cell.getFormula();
     const error = cell.getError();
 
+    // Check for circular reference
     if (error && error !== ErrorMessages.emptyFormula) {
       return [0, error];
     }
 
+    // Check for empty formula
     if (formula.length === 0) {
       return [0, ErrorMessages.invalidCell];
     }
 
+    // Evaluate the formula
     const value = cell.getValue();
     return [value, ""];
   }
 
+  // Check if the token is an operator
   private isOperator(token: TokenType): boolean {
     return ["+", "-", "*", "/"].includes(token);
   }
 
+  // Get the precedence of the operator
   private getOperatorPrecedence(operator: string): number {
     switch (operator) {
       case "+":
