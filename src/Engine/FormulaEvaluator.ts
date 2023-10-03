@@ -24,6 +24,11 @@ export class FormulaEvaluator {
       return;
     }
 
+    if (formula.length === 2 && formula[0] === "(" && formula[1] === ")") {
+      this._errorMessage = ErrorMessages.missingParentheses;
+      return;
+    }
+
     const lastCharacter = formula[formula.length - 1];
     if (this.isOperator(lastCharacter) && lastCharacter !== ")") {
       this._errorMessage = ErrorMessages.invalidFormula;
@@ -42,12 +47,17 @@ export class FormulaEvaluator {
   private evaluateExpression(tokens: FormulaType): number {
     const values: number[] = [];
     const operators: string[] = [];
-  
+
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
-  
+
       if (this.isNumber(token)) {
         values.push(Number(token));
+        // Check if the number is followed by an open parenthesis without an operator in between
+        if (i < tokens.length - 1 && tokens[i + 1] === "(") {
+          this._errorMessage = ErrorMessages.invalidFormula;
+          return Number(token);
+        }
       } else if (this.isCellReference(token)) {
         const [value, error] = this.getCellValue(token);
         if (error) {
@@ -58,43 +68,53 @@ export class FormulaEvaluator {
       } else if (token === "(") {
         operators.push(token);
       } else if (token === ")") {
-        while (operators.length > 0 && operators[operators.length - 1] !== "(") {
+        while (
+          operators.length > 0 &&
+          operators[operators.length - 1] !== "("
+        ) {
           this.applyOperator(operators.pop()!, values);
         }
         operators.pop(); // Remove the "("
       } else if (this.isOperator(token)) {
+        if (i < tokens.length - 1 && this.isOperator(tokens[i + 1])) {
+          this._errorMessage = ErrorMessages.invalidFormula;
+          return values[values.length - 1] || 0; // Return the last value
+        }
         while (
           operators.length > 0 &&
-          this.getOperatorPrecedence(token) <= this.getOperatorPrecedence(operators[operators.length - 1])
+          this.getOperatorPrecedence(token) <=
+            this.getOperatorPrecedence(operators[operators.length - 1])
         ) {
           this.applyOperator(operators.pop()!, values);
         }
         operators.push(token);
       }
     }
-  
+
     // Check for trailing operators
     const lastToken = tokens[tokens.length - 1];
     if (this.isOperator(lastToken)) {
       this._errorMessage = ErrorMessages.invalidFormula;
       return values[values.length - 1] || 0; // Return the last value
     }
-  
+
     // Check if the formula is incomplete (due to unmatched parentheses, etc.)
-    if (operators.length > 0 && (!this.isOperator(operators[operators.length - 1]) || values.length < 2)) {
+    if (
+      operators.length > 0 &&
+      (!this.isOperator(operators[operators.length - 1]) || values.length < 2)
+    ) {
       this._errorMessage = ErrorMessages.invalidFormula;
       throw new Error("Invalid formula");
     }
-  
+
     // Remaining operations
     while (operators.length > 0) {
       this.applyOperator(operators.pop()!, values);
     }
-  
+
     return values.pop() || 0;
-  } 
-  
-  
+  }
+
   private applyOperator(operator: string, values: number[]): void {
     const operand2 = values.pop()!;
     const operand1 = values.pop()!;
