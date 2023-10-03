@@ -283,6 +283,19 @@ class SpreadSheetClient {
     }
 
     public clearFormula(): void {
+        const requestClearURL = `${this._baseURL}/document/clear/formula/${this._documentName}`;
+        fetch(requestClearURL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "userName": this._userName })
+            }).
+            then(response => {
+                return response.json() as Promise<DocumentTransport>;
+            }).then((document: DocumentTransport) => {
+                this._updateDocument(document);
+        });
         return;
     }
 
